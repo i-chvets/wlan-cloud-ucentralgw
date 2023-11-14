@@ -8,5 +8,8 @@ dependencies:
 - name: mariadb
   repository: https://tip.jfrog.io/artifactory/tip-wlan-cloud-ucentral-helm/
   version: 9.4.2
-digest: sha256:e9df5a5d8a0a193bfda33ea06060203aace01f0f7df9eda662a84185322c7ab5
-generated: "2022-06-03T15:38:31.063022252+03:00"
+- name: kafka
+  repository: https://tip.jfrog.io/artifactory/tip-wlan-cloud-ucentral-helm/
+  version: 13.0.2
+digest: sha256:a7b8f24e8d41abc7c0506c7832daf36dc1034ebbebf72c007cc0952eb6ef41cf
+generated: "2023-11-14T18:33:41.695494398-05:00"

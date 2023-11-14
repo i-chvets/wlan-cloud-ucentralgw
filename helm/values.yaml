@@ -257,10 +257,10 @@ configProperties:
   alb.enable: "true"
   alb.port: 16102
   # Kafka
-  openwifi.kafka.enable: "false"
+  openwifi.kafka.enable: "true"
   openwifi.kafka.group.id: gateway
   openwifi.kafka.client.id: gateway1
-  openwifi.kafka.brokerlist: localhost:9092
+  openwifi.kafka.brokerlist: kafka:9092
   openwifi.kafka.auto.commit: false
   openwifi.kafka.queue.buffering.max.ms: 50
   openwifi.kafka.ssl.ca.location: ""

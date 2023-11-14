@@ -16,3 +16,7 @@ dependencies:
   repository: https://tip.jfrog.io/artifactory/tip-wlan-cloud-ucentral-helm/
   version: 9.4.2
   condition: mariadb.enabled
+- name: kafka
+  repository: https://tip.jfrog.io/artifactory/tip-wlan-cloud-ucentral-helm/
+  version: 13.0.2
+  condition: kafka.enabled

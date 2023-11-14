@@ -8,9 +8,9 @@ fullnameOverride: ""
 
 images:
   owgw:
-    repository: tip-tip-wlan-cloud-ucentral.jfrog.io/owgw
-    tag: master
-    pullPolicy: Always
+    repository: owgw
+    tag: latest
+    pullPolicy: IfNotPresent
 #    regcred:
 #      registry: tip-tip-wlan-cloud-ucentral.jfrog.io
 #      username: username

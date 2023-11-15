@@ -1,0 +1,172 @@
+{{- $root := . -}}
+{{- $storageType := index .Values.configProperties "storage.type" -}}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "owgw.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "owgw.name" . }}
+    helm.sh/chart: {{ include "owgw.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "owgw.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- with .Values.services.owgw.labels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include "owgw.config" . | sha256sum }}
+        {{- if .Values.podSecurityPolicy.enabled }}
+        kubernetes.io/psp: {{ include "owgw.fullname" . }}-{{ .Release.Namespace }}-owgw-unsafe-sysctl
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        app.kubernetes.io/name: {{ include "owgw.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- with .Values.services.owgw.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+
+      initContainers:
+        - name: wait-kafka
+          image: "{{ .Values.images.dockerize.repository }}:{{ .Values.images.dockerize.tag }}"
+          imagePullPolicy: {{ .Values.images.dockerize.pullPolicy }}
+          args:
+            - -wait
+            - tcp://{{ index .Values.configProperties "openwifi.kafka.brokerlist" }}
+            - -timeout
+            - 600s
+{{- if eq $storageType "postgresql" }}
+        - name: wait-postgres
+          image: "{{ .Values.images.owgw.repository }}:{{ .Values.images.owgw.tag }}"
+          imagePullPolicy: {{ .Values.images.owgw.pullPolicy }}
+          command:
+            - /wait-for-postgres.sh
+            - {{ index .Values.configProperties "storage.type.postgresql.host" }}
+            - echo
+            - "PostgreSQL is ready"
+          env:
+            - name: KUBERNETES_DEPLOYED
+              value: "{{ now }}"
+          {{- range $key, $value := .Values.public_env_variables }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+          {{- end }}
+          {{- range $key, $value := .Values.secret_env_variables }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "owgw.fullname" $root }}-env
+                  key: {{ $key }}
+          {{- end }}
+          volumeMounts:
+          {{- range .Values.volumes.owgw }}
+          - name: {{ .name }}
+            mountPath: {{ .mountPath }}
+            {{- if .subPath }}
+            subPath: {{ .subPath }}
+            {{- end }}
+          {{- end }}
+{{- end }}
+
+      containers:
+
+        - name: owgw
+          image: "{{ .Values.images.owgw.repository }}:{{ .Values.images.owgw.tag }}"
+          imagePullPolicy: {{ .Values.images.owgw.pullPolicy }}
+
+          env:
+            - name: KUBERNETES_DEPLOYED
+              value: "{{ now }}"
+          {{- range $key, $value := .Values.public_env_variables }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+          {{- end }}
+          {{- range $key, $value := .Values.secret_env_variables }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "owgw.fullname" $root }}-env
+                  key: {{ $key }}
+          {{- end }}
+
+          ports:
+          {{- range $port, $portValue := .Values.services.owgw.ports }}
+            - name: {{ $port }}
+              containerPort: {{ $portValue.targetPort }}
+              protocol: {{ $portValue.protocol }}
+          {{- end }}
+          {{- range $port, $portValue := .Values.services.radius.ports }}
+            - name: {{ $port }}
+              containerPort: {{ $portValue.targetPort }}
+              protocol: {{ $portValue.protocol }}
+          {{- end }}
+
+          volumeMounts:
+          {{- range .Values.volumes.owgw }}
+          - name: {{ .name }}
+            mountPath: {{ .mountPath }}
+            {{- if .subPath }}
+            subPath: {{ .subPath }}
+            {{- end }}
+          {{- end }}
+
+          {{- if .Values.checks.owgw.liveness }}
+          livenessProbe:
+            {{- toYaml .Values.checks.owgw.liveness | nindent 12 }}
+          {{- end }}
+          {{- if .Values.checks.owgw.readiness }}
+          readinessProbe:
+            {{- toYaml .Values.checks.owgw.readiness | nindent 12 }}
+          {{- end }}
+
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+      {{- with .Values.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      imagePullSecrets:
+      {{- range $image, $imageValue := .Values.images }}
+        {{- if $imageValue.regcred }}
+      - name: {{ include "owgw.fullname" $root }}-{{ $image }}-regcred
+        {{- end }}
+      {{- end }}
+
+      volumes:
+      {{- range $container, $containerVolumes := .Values.volumes }}
+      {{- range $containerVolumes }}
+      - name: {{ .name }}
+        {{- tpl .volumeDefinition $root | nindent 8 }}
+      {{- end }}
+      {{- end }}
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -4,6 +4,7 @@
 
 #include "KafkaManager.h"
 
+#include "Poco/Environment.h"
 #include "fmt/format.h"
 #include "framework/MicroServiceFuncs.h"
 #include "cppkafka/utils/consumer_dispatcher.h"
@@ -69,16 +70,23 @@ namespace OpenWifi {
 	void KafkaManager::initialize(Poco::Util::Application &self) {
 		SubSystemServer::initialize(self);
 		KafkaEnabled_ = MicroServiceConfigGetBool("openwifi.kafka.enable", false);
+		Hostname_ = Poco::Environment::get("HOSTNAME", "localhost");
 	}
 
 	inline void KafkaProducer::run() {
 		Poco::Logger &Logger_ =
 			Poco::Logger::create("KAFKA-PRODUCER", KafkaManager()->Logger().getChannel());
-		poco_information(Logger_, "Starting...");
+		poco_information(
+			Logger_,
+			fmt::format(
+				"Starting on host {} ...", Hostname_));
 
 		Utils::SetThreadName("Kafka:Prod");
 		cppkafka::Configuration Config(
-			{{"client.id", MicroServiceConfigGetString("openwifi.kafka.client.id", "")},
+			{{
+				"client.id",
+				fmt::format("{}{}", MicroServiceConfigGetString("openwifi.kafka.client.id", ""), Hostname_)
+			 },
 			 {"metadata.broker.list",
 			  MicroServiceConfigGetString("openwifi.kafka.brokerlist", "")}});
 
@@ -126,10 +134,16 @@ namespace OpenWifi {
 		Poco::Logger &Logger_ =
 			Poco::Logger::create("KAFKA-CONSUMER", KafkaManager()->Logger().getChannel());
 
-		poco_information(Logger_, "Starting...");
+		poco_information(
+			Logger_,
+			fmt::format(
+				"Starting on host {} ...", Hostname_));
 
 		cppkafka::Configuration Config(
-			{{"client.id", MicroServiceConfigGetString("openwifi.kafka.client.id", "")},
+			{{
+				"client.id",
+				fmt::format("{}{}", MicroServiceConfigGetString("openwifi.kafka.client.id", ""), Hostname_)
+			 },
 			 {"metadata.broker.list", MicroServiceConfigGetString("openwifi.kafka.brokerlist", "")},
 			 {"group.id", MicroServiceConfigGetString("openwifi.kafka.group.id", "")},
 			 {"enable.auto.commit", MicroServiceConfigGetBool("openwifi.kafka.auto.commit", false)},
@@ -209,6 +223,7 @@ namespace OpenWifi {
 
 	void KafkaProducer::Start() {
 		if (!Running_) {
+			Hostname_ = Poco::Environment::get("HOSTNAME", "localhost");
 			Running_ = true;
 			Worker_.start(*this);
 		}
@@ -230,6 +245,7 @@ namespace OpenWifi {
 
 	void KafkaConsumer::Start() {
 		if (!Running_) {
+			Hostname_ = Poco::Environment::get("HOSTNAME", "localhost");			
 			Worker_.start(*this);
 		}
 	}

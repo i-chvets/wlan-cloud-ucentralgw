@@ -92,7 +92,8 @@ namespace OpenWifi {
 						"simulated 		BOOLEAN,"
 						"lastRecordedContact 	BIGINT,"
 						"certificateExpiryDate 	BIGINT,"
-						"connectReason 			TEXT"
+						"connectReason 			TEXT,"
+						"gateway        VARCHAR(128)"
 						",INDEX DeviceOwner (Owner ASC),"
 						"INDEX LocationIndex (Location ASC))",
 					Poco::Data::Keywords::now;
@@ -128,7 +129,8 @@ namespace OpenWifi {
 						"simulated 		BOOLEAN, "
 						"lastRecordedContact 	BIGINT,"
 						"certificateExpiryDate 	BIGINT,"
-						"connectReason 			TEXT"
+						"connectReason 			TEXT,"
+						"gateway        VARCHAR(128)"
 						")",
 					Poco::Data::Keywords::now;
 				Sess << "CREATE INDEX IF NOT EXISTS DeviceOwner ON Devices (Owner ASC)",

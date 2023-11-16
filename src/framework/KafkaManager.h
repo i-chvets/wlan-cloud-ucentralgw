@@ -43,6 +43,7 @@ namespace OpenWifi {
 		Poco::Thread Worker_;
 		mutable std::atomic_bool Running_ = false;
 		Poco::NotificationQueue Queue_;
+		std::string Hostname_;
 	};
 
 	class KafkaConsumer : public Poco::Runnable {
@@ -58,6 +59,7 @@ namespace OpenWifi {
 		uint64_t 				FunctionId_ = 1;
 		std::unique_ptr<cppkafka::ConsumerDispatcher> 	Dispatcher_;
 		std::set<std::string>	Topics_;
+		std::string Hostname_;
 
 		void run() override;
 		friend class KafkaManager;
@@ -99,6 +101,7 @@ namespace OpenWifi {
 		std::string SystemInfoWrapper_;
 		KafkaProducer ProducerThr_;
 		KafkaConsumer ConsumerThr_;
+		std::string Hostname_;
 
 		void PartitionAssignment(const cppkafka::TopicPartitionList &partitions);
 		void PartitionRevocation(const cppkafka::TopicPartitionList &partitions);

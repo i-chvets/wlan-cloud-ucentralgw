@@ -100,7 +100,10 @@ spec:
                   name: {{ include "owgw.fullname" $root }}-env
                   key: {{ $key }}
           {{- end }}
-
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           ports:
           {{- range $port, $portValue := .Values.services.owgw.ports }}
             - name: {{ $port }}

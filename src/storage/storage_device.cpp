@@ -14,6 +14,7 @@
 #include "FindCountry.h"
 #include "OUIServer.h"
 #include "Poco/Data/RecordSet.h"
+#include "Poco/Environment.h"
 #include "Poco/Net/IPAddress.h"
 #include "SDKcalls.h"
 #include "SerialNumberCache.h"
@@ -55,7 +56,8 @@ namespace OpenWifi {
 												   "simulated,"
 												   "lastRecordedContact,"
 												   "certificateExpiryDate,"
-												   "connectReason "
+												   "connectReason,"
+												   "gateway "
 	};
 
 	const static std::string DB_DeviceUpdateFields{"SerialNumber=?,"
@@ -88,18 +90,19 @@ namespace OpenWifi {
 												   "simulated=?,"
 												   "lastRecordedContact=?, "
 												   "certificateExpiryDate=?,"
-												   "connectReason=? "
+												   "connectReason=?,"
+												   "gateway=?"
 	};
 
 	const static std::string DB_DeviceInsertValues{
-		" VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "};
+		" VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "};
 
 	typedef Poco::Tuple<std::string, std::string, std::string, std::string, std::string,
 						std::string, std::string, std::string, std::string, std::string,
 						std::string, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, std::string,
 						std::string, std::string, std::string, uint64_t, std::string, bool,
 						std::string, std::string, std::string, std::uint64_t, bool, std::uint64_t,
-						std::uint64_t, std::string>
+						std::uint64_t, std::string, std::string>
 		DeviceRecordTuple;
 	typedef std::vector<DeviceRecordTuple> DeviceRecordList;
 
@@ -136,6 +139,7 @@ namespace OpenWifi {
 		D.lastRecordedContact = R.get<28>();
 		D.certificateExpiryDate = R.get<29>();
 		D.connectReason = R.get<30>();
+		D.gateway = R.get<31>();
 	}
 
 	void ConvertDeviceRecord(const GWObjects::Device &D, DeviceRecordTuple &R) {
@@ -170,6 +174,7 @@ namespace OpenWifi {
 		R.set<28>(D.lastRecordedContact);
 		R.set<29>(D.certificateExpiryDate);
 		R.set<30>(D.connectReason);
+		R.set<31>(D.gateway);
 	}
 
 	bool Storage::GetDeviceCount(uint64_t &Count) {
@@ -508,6 +513,7 @@ namespace OpenWifi {
 		D.simulated = simulated;
 		D.Notes = SecurityObjects::NoteInfoVec{
 			SecurityObjects::NoteInfo{(uint64_t)Utils::Now(), "", "Auto-provisioned."}};
+		D.gateway = Poco::Environment::get("HOSTNAME", "localhost");
 
 		CreateDeviceCapabilities(SerialNumber, Caps);
 

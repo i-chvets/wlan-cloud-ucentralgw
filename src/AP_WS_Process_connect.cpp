@@ -237,6 +237,13 @@ namespace OpenWifi {
 					++Updated;
 				}
 
+				// update device with hostname of this gateway
+				std::string hostname = Poco::Environment::get("HOSTNAME", "localhost");
+				if (DeviceInfo.gateway.empty() || DeviceInfo.gateway != hostname) {
+						DeviceInfo.gateway = hostname;
+						++Updated;
+				}
+
 				if (Updated) {
 					StorageService()->UpdateDevice(DeviceInfo);
 				}
